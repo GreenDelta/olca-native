@@ -2,12 +2,16 @@ package org.openlca.nativelib;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import com.google.gson.Gson;
@@ -30,9 +34,15 @@ record Index(List<Module> modules, List<String> libraries) {
 
 	static Index fromClassPath() {
 		var stream = Index.class.getResourceAsStream(NAME);
-		return stream != null
-			? parse(stream)
-			: empty();
+		if (stream == null)
+			return empty();
+		try (var in = stream) {
+			return parse(in);
+		} catch (Exception e) {
+			var log = LoggerFactory.getLogger(Index.class);
+			log.error("failed to read index from classpath: " + NAME, e);
+			return empty();
+		}
 	}
 
 	static Index fromFolder(File root) {
@@ -43,7 +53,7 @@ record Index(List<Module> modules, List<String> libraries) {
 			return parse(stream);
 		} catch (Exception e) {
 			var log = LoggerFactory.getLogger(Index.class);
-			log.error("failed to read index file " + file, e);
+			log.error("failed to read index file: " + file, e);
 			return empty();
 		}
 	}
@@ -83,6 +93,27 @@ record Index(List<Module> modules, List<String> libraries) {
 				continue;
 			fn.accept(e.getAsString());
 		}
+	}
+
+	void extractFromClassPathTo(File root) throws IOException {
+		var dir = NativeLib.libFolderOf(root);
+		if (!dir.exists()) {
+			Files.createDirectories(dir.toPath());
+		}
+		extractResource(NAME, dir);
+		for (var lib : libraries) {
+			extractResource(lib, dir);
+		}
+	}
+
+	private void extractResource(String name, File dir) throws IOException {
+		var in = Objects.requireNonNull(getClass().getResourceAsStream(name));
+		var file = new File(dir, name);
+		if (file.exists())
+			return;
+		var log = LoggerFactory.getLogger(getClass());
+		log.info("extract file {}", file);
+		Files.copy(in, file.toPath());
 	}
 
 }
