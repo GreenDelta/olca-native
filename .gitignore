@@ -1,0 +1,13 @@
+**/.idea/
+*.iml
+**/.settings/
+.classpath
+.project
+**/.vscode/
+**/target/
+*.*~
+*.DS_Store
+
+*.dll
+*.so
+*.dylib
