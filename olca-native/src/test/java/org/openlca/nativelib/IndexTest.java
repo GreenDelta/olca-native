@@ -1,7 +1,5 @@
 package org.openlca.nativelib;
 
-import java.nio.file.Files;
-
 import static org.junit.Assert.*;
 import org.junit.Test;
 
