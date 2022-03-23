@@ -16,14 +16,13 @@ public class IndexTest {
 	}
 
 	@Test
-	public void testLoadFromDir() throws Exception {
-		var tempDir = Files.createTempDirectory("_olca_").toFile();
-		NativeLib.reloadFrom(tempDir);
-		var index = Index.fromFolder(tempDir);
+	public void testLoadFromDir() {
+		var libDir = Tests.getLibDir();
+		NativeLib.reloadFrom(libDir);
+		var index = Index.fromFolder(libDir);
 		assertFalse(index.isEmpty());
 		assertTrue(index.modules().contains(Module.BLAS));
 		assertFalse(index.libraries().isEmpty());
-		Tests.delete(tempDir);
 	}
 
 }

@@ -7,23 +7,8 @@ class Tests {
 	private Tests() {
 	}
 
-	static void delete(File f) {
-		if (f == null || !f.exists())
-			return;
-		try {
-			if (f.isDirectory()) {
-				var files = f.listFiles();
-				if (files != null) {
-					for (var fi : files) {
-						delete(fi);
-					}
-				}
-			}
-			if (!f.delete()) {
-				f.deleteOnExit();
-			}
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+	public static File getLibDir() {
+		var home = new File(System.getProperty("user.home"));
+		return new File(home, "openLCA-data-1.4");
 	}
 }
