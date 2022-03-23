@@ -12,6 +12,7 @@ public class IndexTest {
 		var index = Index.fromClassPath();
 		assertFalse(index.isEmpty());
 		assertTrue(index.modules().contains(Module.BLAS));
+		assertTrue(index.modules().contains(Module.UMFPACK));
 		assertFalse(index.libraries().isEmpty());
 	}
 

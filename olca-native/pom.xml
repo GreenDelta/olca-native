@@ -32,7 +32,7 @@
 
 		<dependency>
 			<groupId>org.openlca</groupId>
-			<artifactId>olca-native-blas-win-x64</artifactId>
+			<artifactId>olca-native-umfpack-win-x64</artifactId>
 			<version>0.0.1</version>
 			<scope>test</scope>
 		</dependency>
