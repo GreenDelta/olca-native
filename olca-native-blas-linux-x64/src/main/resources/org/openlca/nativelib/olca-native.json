@@ -1,0 +1,12 @@
+{
+  "modules": [
+    "blas"
+  ],
+  "libraries": [
+    "libgcc_s.so.1",
+    "libquadmath.so.0",
+    "libgfortran.so.5",
+    "libopenblas64_.so",
+    "libolcar.so"
+  ]
+}

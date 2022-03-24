@@ -1,0 +1,22 @@
+{
+  "modules": [
+    "blas",
+    "umfpack"
+  ],
+  "libraries": [
+    "libgcc_s.so.1",
+    "libquadmath.so.0",
+    "libgfortran.so.5",
+    "libopenblas64_.so",
+    "libblastrampoline.so",
+    "libstdc++.so.6",
+    "libsuitesparseconfig.so.5",
+    "libamd.so.2",
+    "libccolamd.so.2",
+    "libcamd.so.2",
+    "libcolamd.so.2",
+    "libcholmod.so.3",
+    "libumfpack.so.5",
+    "libolcar_withumf.so"
+  ]
+}
