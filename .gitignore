@@ -10,4 +10,5 @@
 
 *.dll
 *.so
+*.so.*
 *.dylib
