@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 public class NativeLib {
 
-	public static final String VERSION = "1.1.0";
+	public static final String VERSION = "0.0.1";
 
 	private static final EnumSet<Module> _modules = EnumSet.noneOf(Module.class);
 	private static final AtomicBoolean _loaded = new AtomicBoolean(false);
@@ -25,6 +25,17 @@ public class NativeLib {
 	 */
 	public static boolean isLoaded(Module module) {
 		return isLoaded() && _modules.contains(module);
+	}
+
+	/**
+	 * Download and extracts the native libraries for the given module into the
+	 * given target folder.
+	 *
+	 * @param targetDir the target folder where the libraries should be extracted
+	 * @param module the module for which the libraries should be downloaded.
+	 */
+	public static void download(File targetDir, Module module) throws Exception {
+		new Download(targetDir, module).run();
 	}
 
 	public static void reloadFrom(File root) {
@@ -83,8 +94,29 @@ public class NativeLib {
 	}
 
 	static File libFolderOf(File rootDir) {
-		var arch = System.getProperty("os.arch");
-		var path = String.join(File.separator, "olca-native", VERSION, arch);
+		var path = String.join(File.separator, "olca-native", VERSION, arch());
 		return new File(rootDir, path);
+	}
+
+	static String arch() {
+		var arch = System.getProperty("os.arch");
+		if (arch == null)
+			return "x64";
+		var lower = arch.trim().toLowerCase();
+		return lower.startsWith("aarch") || lower.startsWith("arm")
+			? "arm64"
+			: "x64";
+	}
+
+	static String os() {
+		var os = System.getProperty("os.name");
+		if (os == null)
+			return "win";
+		var lower = os.trim().toLowerCase();
+		if (lower.startsWith("linux"))
+			return "linux";
+		if (lower.startsWith("mac"))
+			return "macos";
+		return "win";
 	}
 }

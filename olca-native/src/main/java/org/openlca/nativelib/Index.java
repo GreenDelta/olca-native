@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 record Index(List<Module> modules, List<String> libraries) {
 
-	private static final String NAME = "olca-native.json";
+	static final String NAME = "olca-native.json";
 
 	static Index empty() {
 		return new Index(
