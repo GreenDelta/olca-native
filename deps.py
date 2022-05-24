@@ -1,4 +1,5 @@
 import datetime
+import enum
 import json
 import os
 import platform
@@ -12,13 +13,61 @@ from typing import Dict, List, Set
 PROJECT_ROOT = Path(os.path.dirname(os.path.abspath(__file__)))
 BIN_DIR = PROJECT_ROOT / "bin"
 
-# base names of the compiled libraries
-LIB_BLAS = "olcar"
-LIB_UMFPACK = "olcar_withumf"
 
-OS_MACOS = "macos"
-OS_WINDOWS = "windows"
-OS_LINUX = "linux"
+class Os(enum.Enum):
+
+    WINDOWS = "win"
+    MACOS = "macos"
+    LINUX = "linux"
+
+    @staticmethod
+    def get() -> 'Os':
+        ps = platform.system().lower()
+        if ps == "darwin":
+            return Os.MACOS
+        if ps == "windows":
+            return Os.WINDOWS
+        if ps == "linux":
+            return Os.LINUX
+        sys.exit(f"unknown platform: {ps}")
+
+    @staticmethod
+    def arch() -> str:
+        arch = platform.machine()
+        if arch == "x86_64":
+            return "x64"
+        sys.exit(f'unknown arch: {arch}')
+
+
+class Build(enum.Enum):
+
+    BLAS = "blas"
+    UMFPACK = "umfpack"
+
+    def package(self) -> str:
+        ops = Os.get()
+        arc = Os.arch()
+        return f"olca-native-{self.value}-{ops.value}-{arc}"
+
+    def target(self) -> Path:
+        return PROJECT_ROOT / self.package() /\
+            "src/main/resources/org/openlca/nativelib"
+
+    def lib(self) -> Path:
+        base_name = "olcar" if self == Build.BLAS else "olcar_withumf"
+        _os = Os.get()
+        prefix = ""
+        if _os != Os.WINDOWS:
+            if not base_name.startswith("lib"):
+                prefix = "lib"
+        extension = "so"
+        if _os == Os.MACOS:
+            extension = "dylib"
+        elif _os == Os.WINDOWS:
+            extension = "dll"
+        full_name = f'{prefix}{base_name}.{extension}'
+        full_path = BIN_DIR / full_name
+        return full_path
 
 
 class Node:
@@ -33,44 +82,13 @@ class Node:
         return self.path.name
 
 
-def get_os() -> str:
-    ps = platform.system().lower()
-    if ps == "darwin":
-        return OS_MACOS
-    if ps == "windows":
-        return OS_WINDOWS
-    if ps == "linux":
-        return OS_LINUX
-    sys.exit("unknown platform: " + ps)
-
-
-def libof(name: str) -> Path:
-    """Adds the platform specific library extension and prefix to the given 
-       name. """
-    _os = get_os()
-    prefix = ""
-    if _os != OS_WINDOWS:
-        if not name.startswith("lib"):
-            prefix = "lib"
-    extension = "so"
-    if _os == OS_MACOS:
-        extension = "dylib"
-    elif _os == OS_WINDOWS:
-        extension = "dll"
-    full_name = f'{prefix}{name}.{extension}'
-    full_path = BIN_DIR / full_name
-    if not full_path.exists():
-        sys.exit(f'{full_path} does not exist')
-    return full_path
-
-
 def get_julia_libdir() -> Path:
     """Read the Julia library path from the config file."""
-    _os = get_os()
+    _os = Os.get()
     libdir = None
     config = PROJECT_ROOT / "config"
     with open(config, "r", encoding="utf-8") as f:
-        libdir_key = _os + "-julia-lib-dir"
+        libdir_key = _os.value + "-julia-lib-dir"
         for line in f.readlines():
             parts = line.split("=")
             if len(parts) < 2:
@@ -98,14 +116,14 @@ def get_version():
 
 
 def get_deps(lib_path: Path, libs: List[str]) -> List[str]:
-    _os = get_os()
+    _os = Os.get()
     cmd = None
     path_str = str(lib_path.absolute())
-    if _os == OS_MACOS:
+    if _os == Os.MACOS:
         cmd = ["otool", "-L", path_str]
-    if _os == OS_WINDOWS:
+    if _os == Os.WINDOWS:
         cmd = ["Dependencies.exe", "-imports", path_str]
-    if _os == OS_LINUX:
+    if _os == Os.LINUX:
         cmd = ["ldd", path_str]
     if cmd is None:
         sys.exit("no deps command for os " + _os)
@@ -216,7 +234,7 @@ def topo_sort(dag: Node) -> List[str]:
 
 
 def viz():
-    dag = get_dep_dag(libof(LIB_UMFPACK))
+    dag = get_dep_dag(Build.UMFPACK.lib())
     print("digraph g {")
     queue = [dag]
     while len(queue) != 0:
@@ -229,9 +247,9 @@ def viz():
 
 def collect() -> List[str]:
     """Collect all dependecies in a list."""
-    dag = get_dep_dag(libof(LIB_UMFPACK))
+    dag = get_dep_dag(Build.UMFPACK.lib())
     libs = topo_sort(dag).copy()
-    for lib in topo_sort(get_dep_dag(libof(LIB_BLAS))):
+    for lib in topo_sort(get_dep_dag(Build.UMFPACK.lib())):
         if lib not in libs:
             libs.append(lib)
     return libs
@@ -258,42 +276,35 @@ def dist() -> list:
     print("create the distribution package")
     sync()
 
-    dist = PROJECT_ROOT / "dist"
-    shutil.rmtree(dist, ignore_errors=True)
-    dist.mkdir()
-    now = datetime.datetime.now()
-    suffix = "_%s_%s_%d-%02d-%02d" % (
-        get_version(), get_os(), now.year, now.month, now.day)
-
-    def package(lib: str):
-        if lib == LIB_BLAS:
-            name = "olcar_blas"
+    def package(build: Build):
+        if build == Build.BLAS:
             mods = ["blas"]
         else:
-            name = "olcar_umfpack"
             mods = ["blas", "umfpack"]
 
-        print(f"create package {name}")
+        print(f"create package {build.package()}")
 
         # copy libraries
-        libs = topo_sort(get_dep_dag(libof(lib)))
-        dist_dir = dist / name
-        dist_dir.mkdir(exist_ok=True, parents=True)
+        libs = topo_sort(get_dep_dag(build.lib()))
+        target = build.target()
+        target.mkdir(exist_ok=True, parents=True)
         for lib in libs:
-            shutil.copyfile(BIN_DIR / lib, dist_dir / lib)
-        
+            shutil.copyfile(BIN_DIR / lib, target / lib)
+
         # write the index
         obj = {"modules": mods, "libraries": libs}
-        with open(dist_dir / 'olca-native.json', 'w', encoding='utf-8') as out:
+        with open(target / 'olca-native.json', 'w', encoding='utf-8') as out:
             json.dump(obj, out, indent='  ')
-        
-        # create zip
-        shutil.copyfile(PROJECT_ROOT / "LICENSE.md", dist_dir / "LICENSE.md")
-        zip = dist / f"{name}{suffix}"
-        shutil.make_archive(zip, "zip", dist_dir)
 
-    package(LIB_UMFPACK)
-    package(LIB_BLAS)
+        # copy licenses
+        lics = ["LICENSE_OPENBLAS"]
+        if build == Build.UMFPACK:
+            lics.append("LICENSE_UMFPACK")
+        for lic in lics:
+            shutil.copyfile(PROJECT_ROOT / lic, target / lic)
+
+    package(Build.UMFPACK)
+    package(Build.BLAS)
 
 
 def clean():
@@ -316,7 +327,7 @@ def clean():
 
 
 def build():
-    ext = "bat" if get_os() == OS_WINDOWS else "sh"
+    ext = "bat" if Os.get() == Os.WINDOWS else "sh"
     os.system(PROJECT_ROOT / f"build.{ext}")
 
 

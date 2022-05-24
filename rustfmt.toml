@@ -1,2 +1,3 @@
 max_width = 80
 empty_item_single_line = false
+tab_spaces = 2
