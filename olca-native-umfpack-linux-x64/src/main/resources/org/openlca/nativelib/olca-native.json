@@ -9,10 +9,10 @@
     "libgfortran.so.4",
     "libopenblas64_.so",
     "libsuitesparseconfig.so.5",
-    "libcolamd.so.2",
     "libccolamd.so.2",
     "libcamd.so.2",
     "libamd.so.2",
+    "libcolamd.so.2",
     "libcholmod.so.3",
     "libumfpack.so.5",
     "libolcar_withumf.so"

@@ -1,4 +1,3 @@
-import datetime
 import enum
 import json
 import os
@@ -53,21 +52,22 @@ class Build(enum.Enum):
         return PROJECT_ROOT / self.package() /\
             "src/main/resources/org/openlca/nativelib"
 
-    def lib(self) -> Path:
-        base_name = "olcar" if self == Build.BLAS else "olcar_withumf"
+    def lib_name(self) -> str:
+        name = "olcar" if self == Build.BLAS else "olcar_withumf"
         _os = Os.get()
         prefix = ""
         if _os != Os.WINDOWS:
-            if not base_name.startswith("lib"):
+            if not name.startswith("lib"):
                 prefix = "lib"
         extension = "so"
         if _os == Os.MACOS:
             extension = "dylib"
         elif _os == Os.WINDOWS:
             extension = "dll"
-        full_name = f'{prefix}{base_name}.{extension}'
-        full_path = BIN_DIR / full_name
-        return full_path
+        return f'{prefix}{name}.{extension}'
+
+    def lib(self) -> Path:
+        return BIN_DIR / self.lib_name()
 
 
 class Node:
@@ -104,15 +104,6 @@ def get_julia_libdir() -> Path:
     if not path.exists():
         sys.exit(f"the defined Julia library folder {path} does not exist")
     return path
-
-
-def get_version():
-    """Read the version of the library from the Cargo.toml file."""
-    with open(PROJECT_ROOT / "Cargo.toml", "r", encoding="utf-8") as f:
-        for line in f.readlines():
-            if not line.startswith("version"):
-                continue
-            return line.split("=")[1].strip().strip("\"")
 
 
 def get_deps(lib_path: Path, libs: List[str]) -> List[str]:
@@ -246,43 +237,32 @@ def viz():
 
 
 def collect() -> List[str]:
-    """Collect all dependecies in a list."""
+    """Collect all library dependecies and sync them with the 'bin' folder."""
     dag = get_dep_dag(Build.UMFPACK.lib())
     libs = topo_sort(dag).copy()
     for lib in topo_sort(get_dep_dag(Build.UMFPACK.lib())):
         if lib not in libs:
             libs.append(lib)
-    return libs
-
-
-def sync():
-    print("sync libraries with bin folder")
-    libs = collect()
     julia_dir = get_julia_libdir()
     for lib in libs:
         target = BIN_DIR / lib
         if target.exists():
-            print("bin/%s exists" % lib)
             continue
         source = julia_dir / lib
         if not source.exists():
             print(f"ERROR: {source} does not exist")
             continue
         shutil.copyfile(source, target)
-        print("copied bin/%s" % lib)
+        print(f"  copied bin/{lib}")
+    return libs
 
 
-def dist() -> list:
-    print("create the distribution package")
-    sync()
+def make() -> list:
+    print("create Maven resources")
+    collect()
 
     def package(build: Build):
-        if build == Build.BLAS:
-            mods = ["blas"]
-        else:
-            mods = ["blas", "umfpack"]
-
-        print(f"create package {build.package()}")
+        print(f"  to package {build.package()}")
 
         # copy libraries
         libs = topo_sort(get_dep_dag(build.lib()))
@@ -292,6 +272,7 @@ def dist() -> list:
             shutil.copyfile(BIN_DIR / lib, target / lib)
 
         # write the index
+        mods = ["blas"] if build == Build.BLAS else ["blas", "umfpack"]
         obj = {"modules": mods, "libraries": libs}
         with open(target / 'olca-native.json', 'w', encoding='utf-8') as out:
             json.dump(obj, out, indent='  ')
@@ -308,47 +289,45 @@ def dist() -> list:
 
 
 def clean():
-    if BIN_DIR.exists():
-        print(f'clear libraries in {BIN_DIR}:')
-        blas = libof(LIB_BLAS)
-        umf = libof(LIB_UMFPACK)
-        for f in os.listdir(BIN_DIR):
-            path = BIN_DIR / f
-            if path == blas or path == umf:
-                continue
-            print(f'  delete {path}')
-            os.remove(path)
-
-    dist_dir = PROJECT_ROOT / 'dist'
-    if dist_dir.exists():
-        print(f'clear folder {dist_dir}')
-        shutil.rmtree("./dist", ignore_errors=True)
-        os.mkdir("./dist")
-
-
-def build():
-    ext = "bat" if Os.get() == Os.WINDOWS else "sh"
-    os.system(PROJECT_ROOT / f"build.{ext}")
+    dirs = [BIN_DIR, Build.BLAS.target(), Build.UMFPACK.target()]
+    for folder in dirs:
+        if folder.exists():
+            print(f'  clear folder {folder}')
+            shutil.rmtree(folder, ignore_errors=True)
+        folder.mkdir(exist_ok=True, parents=True)
 
 
 def main():
     args = sys.argv
-    if len(args) < 2:
-        print(collect())
-        return
-    cmd = args[1]
-    if cmd == "build":
-        build()
-    elif cmd == "viz":
-        viz()
-    elif cmd == "collect":
-        print(collect())
-    elif cmd == "sync":
-        sync()
-    elif cmd == "dist":
-        dist()
-    elif cmd == "clean":
+    cmd = "make" if len(args) < 2 else args[1]
+
+    if cmd == "clean":
+        print('delete build artifacts')
         clean()
+        return
+
+    # check if we need a build
+    needs_build = False
+    for build in Build:
+        if not build.lib().exists():
+            needs_build = True
+            break
+    if needs_build:
+        print('compile native libraries')
+        ext = "bat" if Os.get() == Os.WINDOWS else "sh"
+        subprocess.call(PROJECT_ROOT / f"build.{ext}")
+        for build in Build:
+            if not build.lib().exists():
+                sys.exit(f'failed to build library {build.lib_name()}')
+
+    if cmd == "viz":
+        print("create dependency visualization; "
+              "e.g. render it on http://webgraphviz.com/")
+        viz()
+    elif cmd == "make":
+        make()
+    else:
+        print(f'Error: unknown command {cmd}')
 
 
 if __name__ == '__main__':
