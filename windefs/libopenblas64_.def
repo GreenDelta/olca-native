@@ -1,0 +1,7 @@
+EXPORTS
+dgemv64_
+dgemm64_
+dgesv64_
+dgetrf64_
+dgetri64_
+dgetrs64_

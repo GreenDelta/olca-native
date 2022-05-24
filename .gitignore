@@ -8,6 +8,11 @@
 *.*~
 *.DS_Store
 
+/bin/
+/dist/
+**/*.rs.bk
+Cargo.lock
+
 *.dll
 *.so
 *.so.*
