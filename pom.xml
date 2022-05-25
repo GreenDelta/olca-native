@@ -80,8 +80,10 @@
 	<modules>
 		<module>olca-native</module>
 		<module>olca-native-blas-linux-x64</module>
+		<module>olca-native-blas-macos-x64</module>
 		<module>olca-native-blas-win-x64</module>
 		<module>olca-native-umfpack-linux-x64</module>
+		<module>olca-native-umfpack-macos-x64</module>
 		<module>olca-native-umfpack-win-x64</module>
 	</modules>
 

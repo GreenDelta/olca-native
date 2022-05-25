@@ -55,6 +55,22 @@ In that folder, there is an `olca-native.json` file that contains the library
 load-order and the modules (currently `blas` and `umfpack`) that are provided
 by the package.
 
+```json
+{
+  "modules": [
+    "blas"
+  ],
+  "libraries": [
+    "libwinpthread-1.dll",
+    "libgcc_s_seh-1.dll",
+    "libquadmath-0.dll",
+    "libgfortran-5.dll",
+    "libopenblas64_.dll",
+    "olcar.dll"
+  ]
+}
+```
+
 ## Building from source
 
 In order to build the JNI bindings, you need to have a Rust toolchain (with
@@ -79,29 +95,42 @@ The build scripts should then generate the libraries (`olcar.{dll|so|dylib}`
 with BLAS & LAPACK bindings and `olcar_withumf.{dll|so|dylib}` with additional
 UMFPACK bindings in the `bin` folder.
 
+
 ## The `package.py` script
 
 For managing the dependencies and generating distribution packages, this project
-contains a `deps.py` script that can be executed with Python 3.8+ and takes
-a command as argument:
+contains a `package.py` script that can be executed with Python 3.8+:
 
-```bach
-python3 deps.py [command]
+```bash
+# Usage
+
+# run the build if required and copy the libraries
+# into respective platform package
+python3 package.py
+
+# print the dependency graph in dot-format; can
+# be visualized with Graphviz
+python3 package.py viz
+
+# clean-up build resources
+python3 package.py clean
+
 ```
 
-The following commands are currently supported:
-
-* `collect`: collects the dependencies and prints them on the console
-* `sync`: copies missing dependencies to the `bin` folder
-* `dist`: generates the distribution packages
-* `viz`: prints the dependency graph in dot-format that can be
-  visualized with tools like Graphviz/Webgraphviz (like the image above)
-* `clean`: deletes the contents of the `bin` and `dist` folders
-
-The `deps.py` script uses the following tools to collect the dependencies:
+To calculate the library dependencies, the `package.py` script uses the
+following tools to collect the dependencies:
 
 * Linux: `ldd`
 * macOS: `otool`
 * Windows: the command line version of the
   [Dependencies](https://github.com/lucasg/Dependencies) tool which needs to
   be available in the system path
+
+
+## Running the tests
+
+The `olca-native` module contains a small test suite for testing the libraries.
+Set the library dependency to the respective package that you want to test
+in the project's `pom.xml` to run the tests. Also, delete the
+`~/openLCA-data-1.4/olca-native` folder before running the tests, because this
+is used as the library load-location.

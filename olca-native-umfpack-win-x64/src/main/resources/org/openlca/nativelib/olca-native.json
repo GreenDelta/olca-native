@@ -1,18 +1,19 @@
 {
   "modules": [
-    "blas", "umfpack"
+    "blas",
+    "umfpack"
   ],
   "libraries": [
     "libsuitesparseconfig.dll",
     "libamd.dll",
+    "libcamd.dll",
+    "libccolamd.dll",
+    "libcolamd.dll",
     "libwinpthread-1.dll",
     "libgcc_s_seh-1.dll",
     "libquadmath-0.dll",
     "libgfortran-5.dll",
     "libopenblas64_.dll",
-    "libcolamd.dll",
-    "libcamd.dll",
-    "libccolamd.dll",
     "libcholmod.dll",
     "libumfpack.dll",
     "olcar_withumf.dll"

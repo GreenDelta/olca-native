@@ -13,7 +13,7 @@ fn main() {
   // folder from the `config` file in the project root folder. If we cannot
   // find it, we take the `./bin` folder as library path
 
-  if OS == "windows" {
+  if OS == "win" {
     println!("cargo:rustc-link-search=./bin");
     return;
   }

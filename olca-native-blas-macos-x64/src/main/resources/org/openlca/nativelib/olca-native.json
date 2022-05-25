@@ -1,0 +1,12 @@
+{
+  "modules": [
+    "blas"
+  ],
+  "libraries": [
+    "libgcc_s.1.dylib",
+    "libquadmath.0.dylib",
+    "libgfortran.5.dylib",
+    "libopenblas64_.dylib",
+    "libolcar.dylib"
+  ]
+}
