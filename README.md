@@ -1,5 +1,7 @@
 # olca-native
 
+![](deps.png)
+
 This project packages the native calculation libraries for
 [openLCA](https://github.com/GreenDelta/olca-app) as Maven modules. It also
 provides some utility functions for loading these libraries on different
@@ -13,7 +15,7 @@ the users.
 # Usage
 
 In order to use these calculation libraries you need to add the respective
-version of your platform to the classpath, e.g. on Windows:
+version of your platform to the classpath, e.g. for Windows:
 
 ```xml
 <dependency>
@@ -37,36 +39,50 @@ NativeLib.loadFrom(dir);
 
 This will try to load the libraries for your platform from the given folder.
 If there are no libraries at this location yet, it will try to extract them
-from the classpath.
+from the classpath. Thus, you can also just put the libraries into a folder
+and load them from there. `NativeLib.loadFrom(<ROOT>)` will try to load the
+libraries from the following sub-folder:
 
+```
+<ROOT>/olca-native/<VERSION>/<OS.ARCH>
+
+e.g.
+
+~/openLCA-data-1.4/olca-native/0.0.1/x64
+```
+
+In that folder, there is an `olca-native.json` file that contains the library
+load-order and the modules (currently `blas` and `umfpack`) that are provided
+by the package.
 
 ## Building from source
 
 In order to build the JNI bindings, you need to have a Rust toolchain (with
 `ructc`, `cargo`, and a platform specific linker) installed. The respective
 platform entry in the `config` file needs to point to a folder where the
-OpenBLAS and UMFPACK libraries including all dependencies can be found
-(typically, we use the library folder of a Julia installation for this; note
-that the current Julia 1.7 version fails with segfaults in some calculations on
-Linux; the 1.6 version seems to work). This project contains a `build.bat`
-script for Windows and a `build.sh` script for Linux and macOS for running the
-build on these platforms.
+OpenBLAS and UMFPACK libraries including all dependencies can be found (we use
+the library folder of a [Julia](https://www.julialang.org) installation for
+this; note that the current Julia 1.7 version fails with segfaults in some
+calculations; the **1.6 version** seems to work). This project contains a
+`build.bat` script for Windows and a `build.sh` script for Linux and macOS for
+running the JNI build.
 
-On Windows, the build script first [generates lib-files](https://stackoverflow.com/a/16127548/599575)
-for each library we want to link against. This is done automatically from the
-definition files in the `windefs` folder but it requires that the `lib` tool
-from the MSVC 2017 build tools (which are anyhow required for the Rust compiler)
-is in your `PATH` (e.g. something like this:
-`C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\VC\Tools\MSVC\14.24.28314\bin\Hostx64\x64`).
+On **Windows**, the build script first [generates
+lib-files](https://stackoverflow.com/a/16127548/599575) for each library we want
+to link against. This is done automatically from the definition files in the
+`windefs` folder but it requires that the `lib` tool from the MSVC 2017 build
+tools (which are anyhow required for the Rust compiler) is in your `PATH` (e.g.
+something like this: `C:\Program Files (x86)\Microsoft Visual
+Studio\2019\BuildTools\VC\Tools\MSVC\14.24.28314\bin\Hostx64\x64`).
 
 The build scripts should then generate the libraries (`olcar.{dll|so|dylib}`
 with BLAS & LAPACK bindings and `olcar_withumf.{dll|so|dylib}` with additional
 UMFPACK bindings in the `bin` folder.
 
-## The `deps.py` script
+## The `package.py` script
 
 For managing the dependencies and generating distribution packages, this project
-contains a `deps.py` script that can be executed with Python 3.6+ and takes
+contains a `deps.py` script that can be executed with Python 3.8+ and takes
 a command as argument:
 
 ```bach

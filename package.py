@@ -33,7 +33,7 @@ class Os(enum.Enum):
     @staticmethod
     def arch() -> str:
         arch = platform.machine()
-        if arch == "x86_64":
+        if arch == "x86_64" or arch == "AMD64":
             return "x64"
         sys.exit(f'unknown arch: {arch}')
 
