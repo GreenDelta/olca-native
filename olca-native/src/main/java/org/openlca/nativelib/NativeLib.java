@@ -27,17 +27,6 @@ public class NativeLib {
 		return isLoaded() && _modules.contains(module);
 	}
 
-	/**
-	 * Download and extracts the native libraries for the given module into the
-	 * given target folder.
-	 *
-	 * @param targetDir the target folder where the libraries should be extracted
-	 * @param module the module for which the libraries should be downloaded.
-	 */
-	public static void download(File targetDir, Module module) throws Exception {
-		new Download(targetDir, module).run();
-	}
-
 	public static void reloadFrom(File root) {
 		synchronized (_loaded) {
 			_loaded.set(false);

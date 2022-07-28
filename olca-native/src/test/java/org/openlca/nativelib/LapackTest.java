@@ -1,11 +1,10 @@
 package org.openlca.nativelib;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertTrue;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openlca.julia.Julia;
+
+import static org.junit.Assert.*;
 
 public class LapackTest {
 
@@ -19,7 +18,7 @@ public class LapackTest {
 		double[] a = {1, -4, 0, 2};
 		double[] b = {1, 0, 0, 1};
 		int info = Julia.solve(2, 2, a, b);
-		assertTrue(info == 0);
+		assertEquals(0, info);
 		assertArrayEquals(new double[]{1, 2, 0, 0.5}, b, 1e-16);
 	}
 
