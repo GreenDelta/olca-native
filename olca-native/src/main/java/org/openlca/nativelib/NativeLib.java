@@ -60,7 +60,7 @@ public class NativeLib {
 			}
 
 			// load the libraries
-			var dir = libFolderOf(root);
+			var dir = storageLocationIn(root);
 			log.info("load native libraries from {}", dir);
 			for (var lib : idx.libraries()) {
 				var libFile = new File(dir, lib);
@@ -94,9 +94,13 @@ public class NativeLib {
 		}
 	}
 
-	static File libFolderOf(File rootDir) {
+	/**
+	 * Returns the storage location of the native libraries and their meta-data
+	 * files within the given directory (the root folder).
+	 */
+	public static File storageLocationIn(File root) {
 		var path = String.join(File.separator, "olca-native", VERSION, arch());
-		return new File(rootDir, path);
+		return new File(root, path);
 	}
 
 	static String arch() {

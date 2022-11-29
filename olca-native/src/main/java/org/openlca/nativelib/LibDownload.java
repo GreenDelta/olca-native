@@ -52,7 +52,7 @@ public class LibDownload {
 	public void run() throws Exception {
 
 		try {
-			var dir = NativeLib.libFolderOf(targetDir);
+			var dir = NativeLib.storageLocationIn(targetDir);
 			if (!dir.exists()) {
 				Files.createDirectories(dir.toPath());
 			}

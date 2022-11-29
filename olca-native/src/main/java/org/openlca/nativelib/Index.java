@@ -45,7 +45,7 @@ record Index(List<Module> modules, List<String> libraries) {
 	}
 
 	static Index fromFolder(File root) {
-		var file = new File(NativeLib.libFolderOf(root), NAME);
+		var file = new File(NativeLib.storageLocationIn(root), NAME);
 		if (!file.exists())
 			return empty();
 		try (var stream = new FileInputStream(file)) {
@@ -95,7 +95,7 @@ record Index(List<Module> modules, List<String> libraries) {
 	}
 
 	void extractFromClassPathTo(File root) throws IOException {
-		var dir = NativeLib.libFolderOf(root);
+		var dir = NativeLib.storageLocationIn(root);
 		if (!dir.exists()) {
 			Files.createDirectories(dir.toPath());
 		}
