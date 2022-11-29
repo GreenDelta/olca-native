@@ -14,22 +14,34 @@ public class NativeLib {
 	private static final AtomicBoolean _loaded = new AtomicBoolean(false);
 
 	/**
-	 * Returns true if the native libraries are loaded.
+	 * Returns {@code true} if native libraries are loaded.
 	 */
 	public static boolean isLoaded() {
-		return _loaded.get();
+		return _loaded.get() && !_modules.isEmpty();
 	}
 
 	/**
-	 * Returns true if the given module is available and loaded.
+	 * Returns {@code true} if the given module is available and loaded.
 	 */
 	public static boolean isLoaded(Module module) {
 		return isLoaded() && _modules.contains(module);
 	}
 
+	/**
+	 * Returns {@code true} if the given folder contains a native library package
+	 * for the current platform.
+	 */
+	public static boolean isLibraryDir(File root) {
+		if (root == null || !root.exists())
+			return false;
+		var index = Index.fromFolder(root);
+		return !index.isEmpty();
+	}
+
 	public static void reloadFrom(File root) {
 		synchronized (_loaded) {
 			_loaded.set(false);
+			_modules.clear();
 			loadFrom(root);
 		}
 	}
@@ -43,9 +55,9 @@ public class NativeLib {
 			var log = LoggerFactory.getLogger(NativeLib.class);
 			var idx = indexDir(root);
 			if (idx.isEmpty()) {
-					log.warn("could not find native libraries in classpath and {}", root);
-					return;
-				}
+				log.warn("could not find native libraries in classpath and {}", root);
+				return;
+			}
 
 			// load the libraries
 			var dir = libFolderOf(root);
@@ -55,7 +67,7 @@ public class NativeLib {
 				try {
 					System.load(libFile.getAbsolutePath());
 					log.trace("loaded library {}", libFile);
-				} catch (Exception e) {
+				} catch (Throwable e) {
 					log.error("failed to load library " + lib, e);
 					return;
 				}
